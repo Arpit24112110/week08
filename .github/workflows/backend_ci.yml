@@ -19,6 +19,9 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
+    - name: Dump GitHub context
+      run: echo "${{ toJson(github) }}"
+
 
     - name: Log in to Azure using OIDC
       uses: azure/login@v1
