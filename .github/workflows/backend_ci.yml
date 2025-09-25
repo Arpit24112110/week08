@@ -17,7 +17,41 @@ jobs:
     - name: Log in to Azure
       uses: azure/login@v1
       with:
-        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}name: Backend CI
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend_ci.yml'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Log in to Azure
+      uses: azure/login@v1
+      with:
+        auth-type: ID_TOKEN
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    - name: Log in to ACR
+      run: az acr login --name ${{ secrets.AZURE_CONTAINER_REGISTRY }}
+
+    - name: Build and push order_service image
+      run: |
+        docker build -t ${{ secrets.AZURE_CONTAINER_REGISTRY }}.azurecr.io/order-service:latest ./backend/order_service
+        docker push ${{ secrets.AZURE_CONTAINER_REGISTRY }}.azurecr.io/order-service:latest
+
+    - name: Build and push product_service image
+      run: |
+        docker build -t ${{ secrets.AZURE_CONTAINER_REGISTRY }}.azurecr.io/product-service:latest ./backend/product_service
+        docker push ${{ secrets.AZURE_CONTAINER_REGISTRY }}.azurecr.io/product-service:latest
+
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
