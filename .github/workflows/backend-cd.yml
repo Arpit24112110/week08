@@ -1,31 +1,16 @@
-# week08/.github/workflows/backend_cd.yml
-
 name: CD - Deploy Backend Services to AKS
 
 on:
-  workflow_dispatch:
-    inputs:
-      aks_cluster_name:
-        description: 'Name of the AKS Cluster to deploy to'
-        required: true
-        default: '512week08-aks'
-      aks_resource_group:
-        description: 'Resource Group of the AKS Cluster'
-        required: true
-        default: 'week08-rg'
-      aks_acr_name:
-        description: 'Name of ACR'
-        required: true
-        default: 'week08acr512'
+  workflow_run:
+    workflows: ["Backend CI Pipeline"]
+    types:
+      - completed
 
 jobs:
   deploy_backend:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     environment: Production
-
-    outputs:
-      PRODUCT_API_IP: ${{ steps.get_product_ip.outputs.external_ip }}
-      ORDER_API_IP: ${{ steps.get_order_ip.outputs.external_ip }}
 
     steps:
       - name: Checkout repository
@@ -37,28 +22,28 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
           enable-AzPSSession: true
 
-      - name: Set Kubernetes context (get AKS credentials)
+      - name: Set Kubernetes context
         run: |
           az aks get-credentials \
-            --resource-group ${{ github.event.inputs.aks_resource_group }} \
-            --name ${{ github.event.inputs.aks_cluster_name }} \
+            --resource-group ${{ secrets.AKS_RESOURCE_GROUP }} \
+            --name ${{ secrets.AKS_CLUSTER_NAME }} \
             --overwrite-existing
-            
-      - name: Deploy Backend Infrastructure (Namespace, ConfigMaps, Secrets, Databases)
+
+      - name: Deploy Backend Infrastructure
         run: |
           echo "Deploying backend infrastructure..."
           cd k8s/
-          kubectl apply -f configmaps.yaml
-          kubectl apply -f secrets.yaml
-          kubectl apply -f product-db.yaml
-          kubectl apply -f order-db.yaml
+          kubectl apply -f configmaps.yaml || exit 1
+          kubectl apply -f secrets.yaml || exit 1
+          kubectl apply -f product-db.yaml || exit 1
+          kubectl apply -f order-db.yaml || exit 1
 
-      - name: Deploy Backend Microservices (Product, Order)
+      - name: Deploy Backend Microservices
         run: |
           echo "Deploying backend microservices..."
           cd k8s/
-          kubectl apply -f product-service.yaml
-          kubectl apply -f order-service.yaml
+          kubectl apply -f product-service.yaml || exit 1
+          kubectl apply -f order-service.yaml || exit 1
 
       - name: Wait for Backend LoadBalancer IPs
         run: |
