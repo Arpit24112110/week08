@@ -25,7 +25,7 @@ jobs:
       uses: actions/github-script@v6
       with:
         script: |
-          const token = await core.getIDToken();
+          const token = await core.getIDToken("api://AzureADTokenExchange");
           core.setOutput("id_token", token);
 
     - name: Log in to Azure using federated token
