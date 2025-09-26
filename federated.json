@@ -1,0 +1,7 @@
+{
+  "name": "github-actions-week08",
+  "issuer": "https://token.actions.githubusercontent.com",
+  "subject": "repo:Arpit24112110/week08:ref:refs/heads/main",
+  "description": "OIDC for GitHub Actions",
+  "audiences": ["api://AzureADTokenExchange"]
+}

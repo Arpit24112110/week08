@@ -1,0 +1,29 @@
+name: Frontend CD
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get AKS Credentials
+        run: |
+          az aks get-credentials --resource-group Arpit_Credit-rg --name arpitcreditaks
+
+      - name: Deploy Frontend
+        run: |
+          kubectl apply -f k8s/frontend-deployment.yaml
+          kubectl rollout status deployment/frontend
